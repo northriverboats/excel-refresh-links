@@ -12,4 +12,4 @@
 5. `/c/Python27/Lib/site-packages/PyQt4/pyuic4.bat -x MainWindow.ui -o MainWindow.py`
 
 ## Build Executable
-`pyinstaller.exe --onefile --windowed --icon forklift.ico  Excel/ Refresh/Links\ FWW.spec`
+`pyinstaller.exe --onefile --windowed --icon forklift.ico  Excel/ Refresh/ Links\ FWW.spec`
