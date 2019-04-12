@@ -6,10 +6,8 @@
 
 ## Generate UI
 1. Ues QT Creator
-2. ReplacePartsXLS.ui
-3. DialogResults.ui
-4. `/c/Python27/Lib/site-packages/PyQt4/pyuic4.bat -x MainWindow.ui -o MainWindow.py`
-5. `/c/Python27/Lib/site-packages/PyQt4/pyuic4.bat -x MainWindow.ui -o MainWindow.py`
+2. MainWindow.ui
+3. `/c/Python27/Lib/site-packages/PyQt4/pyuic4.bat -x MainWindow.ui -o MainWindow.py`
 
 ## Build Executable
 `pyinstaller.exe --onefile --windowed --icon relink.ico  Excel\ Refresh\ Links\ FWW.spec`
