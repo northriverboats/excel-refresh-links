@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'MainWindow.ui'
 #
-# Created: Sat Apr 13 15:39:14 2019
+# Created: Thu Apr 18 21:30:51 2019
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -31,14 +31,20 @@ class Ui_MainWindow(object):
         self.centralwidget.setObjectName(_fromUtf8("centralwidget"))
         self.gridLayout = QtGui.QGridLayout(self.centralwidget)
         self.gridLayout.setObjectName(_fromUtf8("gridLayout"))
+        self.horizontalLayout = QtGui.QHBoxLayout()
+        self.horizontalLayout.setObjectName(_fromUtf8("horizontalLayout"))
+        self.gridLayout.addLayout(self.horizontalLayout, 3, 0, 1, 1)
         self.horizontalLayout_8 = QtGui.QHBoxLayout()
         self.horizontalLayout_8.setObjectName(_fromUtf8("horizontalLayout_8"))
         spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         self.horizontalLayout_8.addItem(spacerItem)
+        self.btnCancel = QtGui.QPushButton(self.centralwidget)
+        self.btnCancel.setObjectName(_fromUtf8("btnCancel"))
+        self.horizontalLayout_8.addWidget(self.btnCancel)
         self.btnRelink = QtGui.QPushButton(self.centralwidget)
         self.btnRelink.setObjectName(_fromUtf8("btnRelink"))
         self.horizontalLayout_8.addWidget(self.btnRelink)
-        self.gridLayout.addLayout(self.horizontalLayout_8, 2, 0, 1, 1)
+        self.gridLayout.addLayout(self.horizontalLayout_8, 4, 0, 1, 1)
         self.horizontalLayout_7 = QtGui.QHBoxLayout()
         self.horizontalLayout_7.setObjectName(_fromUtf8("horizontalLayout_7"))
         self.lePath = QtGui.QLineEdit(self.centralwidget)
@@ -51,6 +57,10 @@ class Ui_MainWindow(object):
         self.teOutput = QtGui.QTextEdit(self.centralwidget)
         self.teOutput.setObjectName(_fromUtf8("teOutput"))
         self.gridLayout.addWidget(self.teOutput, 1, 0, 1, 1)
+        self.progressBar = QtGui.QProgressBar(self.centralwidget)
+        self.progressBar.setProperty("value", 0)
+        self.progressBar.setObjectName(_fromUtf8("progressBar"))
+        self.gridLayout.addWidget(self.progressBar, 2, 0, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtGui.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 529, 21))
@@ -107,6 +117,8 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow", None))
+        self.btnCancel.setText(_translate("MainWindow", "&Cancel", None))
+        self.btnCancel.setShortcut(_translate("MainWindow", "Ctrl+C", None))
         self.btnRelink.setText(_translate("MainWindow", "Relink", None))
         self.btnBrowse.setText(_translate("MainWindow", "Browse", None))
         self.btnBrowse.setShortcut(_translate("MainWindow", "Ctrl+B", None))
