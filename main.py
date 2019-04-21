@@ -38,6 +38,8 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
 
         self.setWindowIcon(QtGui.QIcon(os.path.join(bundle_dir,"relink.ico")))
         
+        # Set X close button to use our close event
+        
         # work in INI File Stuff here
         QtCore.QCoreApplication.setOrganizationName("NRB")
         QtCore.QCoreApplication.setOrganizationDomain("northriverboats.com")
@@ -69,7 +71,7 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         #   os.makedirs(self.iniFolder)	
 
         # generic slots and signals
-        self.actionExit.triggered.connect(self.closeEvent)
+        self.actionExit.triggered.connect(self._closeEvent)
         self.actionRelink.triggered.connect(self.doRelink)
         self.actionRecent1.triggered.connect(self.doRecent1)
         self.actionRecent2.triggered.connect(self.doRecent2)
@@ -87,7 +89,14 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         # set status bar
         self.statusbar.showMessage("System Status | Idle")
         
-    def closeEvent(self, e):        
+    def closeEvent(self, e):
+        self.exit = True
+        self.update_links_thread.running = False
+        e.ignore()
+ 
+    
+    
+    def _closeEvent(self, e): 
         # Write window size and position to config file
         self.settings.setValue("size", self.size())
         self.settings.setValue("pos", self.pos())
@@ -179,11 +188,9 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         self.statusbar.showMessage("System Status | " + message)
 
     def update_abort(self):
-        print("canceling")
         self.update_links_thread.running = False
         
     def update_done(self):
-        print('done')
         self.btnCancel.hide()
         self.btnRelink.show()
         self.btnBrowse.setEnabled(True)
@@ -193,7 +200,7 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         self.actionSave.setDisabled(False)
         # If exit was requested close program
         if self.exit:
-            self.closeEvent(0)
+            self._closeEvent(0)
         
 
 class update_links_thread(QThread):
@@ -222,7 +229,6 @@ class update_links_thread(QThread):
             for file in files:
                 if self._file_filter(root, file):
                     self.file_list.append(os.path.join(root, file))
-                    # print(os.path.join(root,file))
                     self.emit(SIGNAL('update_statusbar(QString)'), 'Files Found ' + str(len(self.file_list)))
                     if not self.running:
                         self.emit(SIGNAL('update_statusbar(QString)'), 'Canceled')
