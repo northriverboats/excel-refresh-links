@@ -149,11 +149,11 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         self.update_links_thread.start()
         self.btnCancel.clicked.connect(self.update_abort)
  
-    def clear_textaera(self):
-        pass
+    def clear_textarea(self):
+        self.textArea.clear()
         
     def update_textarea(self, Qstring):
-        pass
+        self.textArea.append(Qstring)
 
     def update_progressbar(self, num):
         self.progressBar.setValue(num)
@@ -192,6 +192,7 @@ class update_links_thread(QThread):
         self.running = True
         self.file_list = []
         self.emit(SIGNAL('update_progressbar(int)'), 0)
+        self.emit(SIGNAL('clear_textarea()'))
         for root, dirs, files in os.walk(str(self.path)):
             for file in files:
                 if self._file_filter(root, file):
@@ -212,6 +213,7 @@ class update_links_thread(QThread):
             current_count += 1
             self.emit(SIGNAL('update_progressbar(int)'), int(float(current_count) / total_files * 100))
             self.emit(SIGNAL('update_statusbar(QString)'), 'Relinking %d of %d' % (current_count, total_files))
+            self.emit(SIGNAL('update_textarea(QString)'), file[len(self.path) + 1:])
             excel.DisplayAlerts = False 
             workbook = excel.Workbooks.Open(file, UpdateLinks=3)
             excel.Workbooks.Close()
