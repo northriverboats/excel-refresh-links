@@ -136,10 +136,18 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         # if text NOT EQUAL self.recent[0] update
         # if self.recent[0] is blank THEN bail
         # if self.recent[0] is not a folder THEN bail
-        
+        # if exit or X incorner is clicked while running
+        #   block it
+        #   set flag and do abort
+        #   durring done check for flag and need to run normal exit
         
         self.btnRelink.hide()
         self.btnCancel.show()
+        self.btnBrowse.setEnabled(False)
+        self.lePath.setEnabled(False)
+        self.actionRelink.setDisabled(True)
+        self.menu_Recent.setDisabled(True)
+        self.actionSave.setDisabled(True)
         self.update_links_thread = update_links_thread(self.recent[0])
         self.connect(self.update_links_thread, SIGNAL('update_statusbar(QString)'), self.update_statusbar)
         self.connect(self.update_links_thread, SIGNAL('update_progressbar(int)'), self.update_progressbar)
@@ -151,9 +159,11 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
  
     def clear_textarea(self):
         self.textArea.clear()
+        self.textArea.centerOnScroll = True
         
     def update_textarea(self, Qstring):
         self.textArea.append(Qstring)
+        self.textArea.ensureCursorVisible()
 
     def update_progressbar(self, num):
         self.progressBar.setValue(num)
@@ -169,6 +179,11 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         print('done')
         self.btnCancel.hide()
         self.btnRelink.show()
+        self.btnBrowse.setEnabled(True)
+        self.lePath.setEnabled(True)
+        self.actionRelink.setDisabled(False)
+        self.menu_Recent.setDisabled(False)
+        self.actionSave.setDisabled(False)
         
 
 class update_links_thread(QThread):
