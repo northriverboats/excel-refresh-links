@@ -28,6 +28,7 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         
         self.max_history = 7
         self.output_text = ""
+        self.exit_flag = False
 
         if getattr(sys, 'frozen', False):
             bundle_dir = sys._MEIPASS
@@ -90,9 +91,15 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         # Write window size and position to config file
         self.settings.setValue("size", self.size())
         self.settings.setValue("pos", self.pos())
+        # Write recent paths to config file
         for i in range(self.max_history):
            self.settings.setValue("recent" + str(unichr(48 + i)), self.recent[i])
-        sys.exit()
+        self.exit = True
+        # if relinking is taking place, 
+        if self.update_links_thread.running:
+            self.update_links_thread.running = False
+        else:
+            sys.exit()
         
     def browseEvent(self):
         default_dir = self.recent[0] or os.path.join(os.path.expanduser("~"), "Desktop")
@@ -184,6 +191,9 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         self.actionRelink.setDisabled(False)
         self.menu_Recent.setDisabled(False)
         self.actionSave.setDisabled(False)
+        # If exit was requested close program
+        if self.exit:
+            self.closeEvent(0)
         
 
 class update_links_thread(QThread):
