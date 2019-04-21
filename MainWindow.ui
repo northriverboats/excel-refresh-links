@@ -70,7 +70,11 @@
      </layout>
     </item>
     <item row="1" column="0">
-     <widget class="QTextEdit" name="teOutput"/>
+     <widget class="QTextEdit" name="textArea">
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
     </item>
     <item row="2" column="0">
      <widget class="QProgressBar" name="progressBar">

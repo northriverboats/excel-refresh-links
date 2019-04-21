@@ -5,6 +5,7 @@ from PyQt4 import QtCore
 from PyQt4.QtCore import QSettings, QPoint, QSize
 from PyQt4.QtCore import QThread, SIGNAL
 from win32com.client import DispatchEx
+import pythoncom
 import sys # We need sys so that we can pass argv to QApplication
 import os
 import re
@@ -25,9 +26,8 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         super(self.__class__, self).__init__()
         self.setupUi(self)
         
-        self.excel = False
         self.max_history = 7
-        self.msg = ""
+        self.output_text = ""
 
         if getattr(sys, 'frozen', False):
             bundle_dir = sys._MEIPASS
@@ -79,12 +79,10 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
 
         self.btnBrowse.clicked.connect(self.browseEvent)
         self.btnRelink.clicked.connect(self.doRelink)
-        self.btnCancel.clicked.connect(self.update_done)
         app = QtGui.QApplication.instance()
-        # app.focusChanged.connect(self.changed_focus)
 
         self.btnCancel.hide()
-		
+        
         # set status bar
         self.statusbar.showMessage("System Status | Idle")
         
@@ -142,66 +140,94 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         
         self.btnRelink.hide()
         self.btnCancel.show()
-        self.statusbar.showMessage("System Status | Starting Excel")
-        print('Starting excel')
-        self.excel = DispatchEx("Excel.Application")
-        self.excel.Visible = 0
-        self.msg = 'Completed'
-        self.statusbar.showMessage("System Status | Excel Started")
-        self.update_links_thread = update_links_thread(self.recent[0], self.excel)
+        self.update_links_thread = update_links_thread(self.recent[0])
         self.connect(self.update_links_thread, SIGNAL('update_statusbar(QString)'), self.update_statusbar)
-        self.connect(self.update_links_thread, SIGNAL('update_progresssbar(int)'), self.update_progressbar)
+        self.connect(self.update_links_thread, SIGNAL('update_progressbar(int)'), self.update_progressbar)
+        self.connect(self.update_links_thread, SIGNAL('clear_textarea()'), self.clear_textarea)
+        self.connect(self.update_links_thread, SIGNAL('update_textarea(QString)'), self.update_textarea)
         self.connect(self.update_links_thread, SIGNAL("finished()"), self.update_done)
         self.update_links_thread.start()
         self.btnCancel.clicked.connect(self.update_abort)
  
+    def clear_textaera(self):
+        pass
+        
+    def update_textarea(self, Qstring):
+        pass
 
-    def update_progressbar(self, int):
-        self.progress_bar.setValue(int)
+    def update_progressbar(self, num):
+        self.progressBar.setValue(num)
         
     def update_statusbar(self, message):
         self.statusbar.showMessage("System Status | " + message)
 
     def update_abort(self):
-        self.msg = 'Canceled'
-        self.update_links_thread.terminate()
+        print("canceling")
+        self.update_links_thread.running = False
         
     def update_done(self):
-        if self.excel:
-            self.btnCancel.hide()
-            self.btnRelink.show()
-            print("--" + self.msg)
-            self.update_statusbar(self.msg)
-            print('Stopping Excel')
-            self.excel.Application.Quit()
-            self.excel = False
+        print('done')
+        self.btnCancel.hide()
+        self.btnRelink.show()
+        
 
 class update_links_thread(QThread):
 
-    def __init__(self, path, excel):
+    def __init__(self, path):
         QThread.__init__(self)
         self.path = path
-        self.excel = excel
 
     def __del__(self):
         self.wait()
 
     def _file_filter(self, root, file):
+        if file[:2] == "~$":
+            return False
         return (file.endswith(".xls") or file.endswith(".xlsx") or file.endswith(".xlsm"))
 
     def _file_scan(path):
         pass
         
     def run(self):
+        self.running = True
         self.file_list = []
+        self.emit(SIGNAL('update_progressbar(int)'), 0)
         for root, dirs, files in os.walk(str(self.path)):
             for file in files:
                 if self._file_filter(root, file):
                     self.file_list.append(os.path.join(root, file))
                     # print(os.path.join(root,file))
                     self.emit(SIGNAL('update_statusbar(QString)'), 'Files Found ' + str(len(self.file_list)))
+                    if not self.running:
+                        self.emit(SIGNAL('update_statusbar(QString)'), 'Canceled')
+                        return
         self.emit(SIGNAL('update_statusbar(QString)'), 'Scanning Completed ' + str(len(self.file_list)) + ' Files Found')
-        self.emit(SIGNAL('update_progressbar(int)'), 50)
+        total_files = len(self.file_list)
+        current_count = 0
+        pythoncom.CoInitialize()
+        excel = DispatchEx("Excel.Application")
+        excel.Visible = 0
+        self.emit(SIGNAL('update_statusbar(QString)'), 'Starting Excel')
+        for file in self.file_list:
+            current_count += 1
+            self.emit(SIGNAL('update_progressbar(int)'), int(float(current_count) / total_files * 100))
+            self.emit(SIGNAL('update_statusbar(QString)'), 'Relinking %d of %d' % (current_count, total_files))
+            excel.DisplayAlerts = False 
+            workbook = excel.Workbooks.Open(file, UpdateLinks=3)
+            excel.Workbooks.Close()
+            if not self.running:
+                break
+
+        excel.Application.Quit()
+        pythoncom.CoUninitialize()
+        if current_count == total_files:
+            self.emit(SIGNAL('update_statusbar(QString)'), 'Completed')
+            self.emit(SIGNAL('update_progressbar(int)'), 100)
+        else:
+            self.emit(SIGNAL('update_statusbar(QString)'), 'Canceled')
+            self.emit(SIGNAL('update_progressbar(int)'), 0)
+        self.sleep(2)
+        
      
 		
 

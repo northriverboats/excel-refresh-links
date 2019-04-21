@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'MainWindow.ui'
 #
-# Created: Thu Apr 18 21:30:51 2019
+# Created: Sat Apr 20 17:49:18 2019
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -54,9 +54,10 @@ class Ui_MainWindow(object):
         self.btnBrowse.setObjectName(_fromUtf8("btnBrowse"))
         self.horizontalLayout_7.addWidget(self.btnBrowse)
         self.gridLayout.addLayout(self.horizontalLayout_7, 0, 0, 1, 1)
-        self.teOutput = QtGui.QTextEdit(self.centralwidget)
-        self.teOutput.setObjectName(_fromUtf8("teOutput"))
-        self.gridLayout.addWidget(self.teOutput, 1, 0, 1, 1)
+        self.textArea = QtGui.QTextEdit(self.centralwidget)
+        self.textArea.setReadOnly(True)
+        self.textArea.setObjectName(_fromUtf8("textArea"))
+        self.gridLayout.addWidget(self.textArea, 1, 0, 1, 1)
         self.progressBar = QtGui.QProgressBar(self.centralwidget)
         self.progressBar.setProperty("value", 0)
         self.progressBar.setObjectName(_fromUtf8("progressBar"))
