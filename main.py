@@ -13,6 +13,15 @@ import MainWindow # This file holds our MainWindow and all design related things
 
 # ToDo
 # - update path input when focus is lost
+# - if path input empty do not allow relink
+# DORELINK
+# - if text NOT EQUAL self.recent[0] update
+# - if self.recent[0] is blank THEN bail
+# - if self.recent[0] is not a folder THEN bail
+# - if exit or X incorner is clicked while running
+# -   block it
+# -   set flag and do abort
+# -   durring done check for flag and need to run normal exit
 
 # C:\Python27\Lib\site-packages\PyQt4\pyuic4 MainWindow.ui  -o MainWindow.py
 # pyinstaller --onefile --windowed --icon relink.ico  --name "Excel Refresh Links" "Excel Refresh Links FWW.spec" main.py
@@ -38,8 +47,6 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
 
         self.setWindowIcon(QtGui.QIcon(os.path.join(bundle_dir,"relink.ico")))
         
-        # Set X close button to use our close event
-        
         # work in INI File Stuff here
         QtCore.QCoreApplication.setOrganizationName("NRB")
         QtCore.QCoreApplication.setOrganizationDomain("northriverboats.com")
@@ -56,19 +63,6 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         for i in range(self.max_history):
            self.recent.append(self.settings.value("recent" + str(unichr(48 + i)), "").toString())
         self.redrawMenu()
-        
-        #  do menu things
-        # self.submenu2.menuAction().setVisible(False)
-        # self.menuitem.setVisible(False)
-        # self.menu_Recent.menuAction().setVisible(False)
-        # self.actionRecent1.setText(self.recent[0])
-        
-        # self.actionRecent1.setVisible(False)
-
-        # self.iniFolder = os.path.join(os.path.join(os.path.expanduser("~"), ".config"), "ExcelRelink")
-        # self.iniFile = os.path.join(self.iniFolder, "config.ini")
-        # if not os.path.exists(self.iniFolder):
-        #   os.makedirs(self.iniFolder)	
 
         # generic slots and signals
         self.actionExit.triggered.connect(self._closeEvent)
@@ -90,9 +84,12 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         self.statusbar.showMessage("System Status | Idle")
         
     def closeEvent(self, e):
-        self.exit = True
-        self.update_links_thread.running = False
-        e.ignore()
+        self.exit_flag = True
+        try:
+            self.update_links_thread.running = False
+            e.ignore()
+        except:
+            pass
  
     
     
@@ -103,9 +100,10 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         # Write recent paths to config file
         for i in range(self.max_history):
            self.settings.setValue("recent" + str(unichr(48 + i)), self.recent[i])
-        self.exit = True
+        self.exit_flag = True
         # if relinking is taking place, 
         if self.update_links_thread.running:
+            self.update_statusbar('Canceled')
             self.update_links_thread.running = False
         else:
             sys.exit()
@@ -149,14 +147,8 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         self.changePath(self.recent[6])
         
     def doRelink(self):
-        # if text NOT EQUAL self.recent[0] update
-        # if self.recent[0] is blank THEN bail
-        # if self.recent[0] is not a folder THEN bail
-        # if exit or X incorner is clicked while running
-        #   block it
-        #   set flag and do abort
-        #   durring done check for flag and need to run normal exit
-        
+        if not self.recent[0]:
+            return
         self.btnRelink.hide()
         self.btnCancel.show()
         self.btnBrowse.setEnabled(False)
@@ -199,7 +191,7 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         self.menu_Recent.setDisabled(False)
         self.actionSave.setDisabled(False)
         # If exit was requested close program
-        if self.exit:
+        if self.exit_flag:
             self._closeEvent(0)
         
 
