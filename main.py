@@ -36,6 +36,7 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
             # we are running in a normal Python environment
             bundle_dir = os.path.dirname(os.path.abspath(__file__))
 
+        # set program icon
         self.setWindowIcon(QtGui.QIcon(os.path.join(bundle_dir,"relink.ico")))
         
         # work in INI File Stuff here
@@ -78,13 +79,14 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
     def closeEvent(self, e):
         self.exit_flag = True
         try:
-            self.update_links_thread.running = False
-            e.ignore()
+            if self.update_links_thread:
+                self.update_links_thread.running = False
+                e.ignore()
+            else:
+                self._closeEvent(0)
         except:
             pass
- 
-    
-    
+     
     def _closeEvent(self, e): 
         # Write window size and position to config file
         self.settings.setValue("size", self.size())
@@ -93,13 +95,17 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         for i in range(self.max_history):
            self.settings.setValue("recent" + str(unichr(48 + i)), self.recent[i])
         self.exit_flag = True
-        # if relinking is taking place, 
-        if self.update_links_thread.running:
-            self.update_statusbar('Canceled')
-            self.update_links_thread.running = False
-        else:
+        # if relinking is taking place,
+        try:
+            if self.update_links_thread.running:
+                self.update_statusbar('Canceled')
+                self.update_links_thread.running = False
+            else:
+                sys.exit()
+        except:
             sys.exit()
-        
+            
+       
     def browseEvent(self):
         default_dir = self.recent[0] or os.path.join(os.path.expanduser("~"), "Desktop")
         my_dir = QtGui.QFileDialog.getExistingDirectory(self, "Open a folder", default_dir, QtGui.QFileDialog.ShowDirsOnly)
@@ -244,7 +250,7 @@ class update_links_thread(QThread):
         else:
             self.emit(SIGNAL('update_statusbar(QString)'), 'Canceled')
             self.emit(SIGNAL('update_progressbar(int)'), 0)
-        self.sleep(2)
+        self.sleep(1)
         
      
 		
