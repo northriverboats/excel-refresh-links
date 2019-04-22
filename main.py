@@ -12,16 +12,7 @@ import re
 import MainWindow # This file holds our MainWindow and all design related things
 
 # ToDo
-# - update path input when focus is lost
-# - if path input empty do not allow relink
-# DORELINK
-# - if text NOT EQUAL self.recent[0] update
-# - if self.recent[0] is blank THEN bail
-# - if self.recent[0] is not a folder THEN bail
-# - if exit or X incorner is clicked while running
-# -   block it
-# -   set flag and do abort
-# -   durring done check for flag and need to run normal exit
+# - Consider dragEnable 1 folder onto lePath
 
 # C:\Python27\Lib\site-packages\PyQt4\pyuic4 MainWindow.ui  -o MainWindow.py
 # pyinstaller --onefile --windowed --icon relink.ico  --name "Excel Refresh Links" "Excel Refresh Links FWW.spec" main.py
@@ -82,6 +73,7 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         
         # set status bar
         self.statusbar.showMessage("System Status | Idle")
+
         
     def closeEvent(self, e):
         self.exit_flag = True
@@ -147,8 +139,9 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         self.changePath(self.recent[6])
         
     def doRelink(self):
-        if not self.recent[0]:
-            return
+        # if path is not valid then bail
+        if not os.path.isdir(self.recent[0]):
+            self.update_statusbar('Path not valid')
         self.btnRelink.hide()
         self.btnCancel.show()
         self.btnBrowse.setEnabled(False)

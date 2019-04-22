@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'MainWindow.ui'
 #
-# Created: Sat Apr 20 17:49:18 2019
+# Created: Sun Apr 21 20:43:42 2019
 #      by: PyQt4 UI code generator 4.10.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -48,6 +48,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout_7 = QtGui.QHBoxLayout()
         self.horizontalLayout_7.setObjectName(_fromUtf8("horizontalLayout_7"))
         self.lePath = QtGui.QLineEdit(self.centralwidget)
+        self.lePath.setReadOnly(True)
         self.lePath.setObjectName(_fromUtf8("lePath"))
         self.horizontalLayout_7.addWidget(self.lePath)
         self.btnBrowse = QtGui.QPushButton(self.centralwidget)
