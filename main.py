@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 
-from PyQt4 import QtGui # Import the PyQt4 module we'll need
+from PyQt4 import QtGui  # Import the PyQt4 module we'll need
 from PyQt4 import QtCore
-from PyQt4.QtCore import QSettings, QPoint, QSize
+from PyQt4.QtCore import QSettings, QSize
 from PyQt4.QtCore import QThread, SIGNAL
 from win32com.client import DispatchEx
 import pythoncom
-import sys # We need sys so that we can pass argv to QApplication
+import sys  # We need sys so that we can pass argv to QApplication
 import os
-import re
-import MainWindow # This file holds our MainWindow and all design related things
+import MainWindow  # This file holds our MainWindow and all design related things
 
 # ToDo
 # - Consider dragEnable 1 folder onto lePath
@@ -21,11 +20,11 @@ import MainWindow # This file holds our MainWindow and all design related things
 
 
 class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
-    
+
     def __init__(self):
         super(self.__class__, self).__init__()
         self.setupUi(self)
-        
+
         self.max_history = 7
         self.output_text = ""
         self.exit_flag = False
@@ -37,23 +36,23 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
             bundle_dir = os.path.dirname(os.path.abspath(__file__))
 
         # set program icon
-        self.setWindowIcon(QtGui.QIcon(os.path.join(bundle_dir,"relink.ico")))
-        
+        self.setWindowIcon(QtGui.QIcon(os.path.join(bundle_dir, "relink.ico")))
+
         # work in INI File Stuff here
         QtCore.QCoreApplication.setOrganizationName("NRB")
         QtCore.QCoreApplication.setOrganizationDomain("northriverboats.com")
         QtCore.QCoreApplication.setApplicationName("Excel Refresh Links")
         self.settings = QSettings()
-        
+
         # Initial window size/pos last saved. Use default values for first time
         self.resize(self.settings.value("size", QSize(900, 500)).toSize())
         self.move(self.settings.value("pos", QSize(0, 0)).toPoint())
         # need rules to keep window no larger than desktop
         # need rules to keep window pos visible on screen
-        
+
         self.recent = []
         for i in range(self.max_history):
-           self.recent.append(self.settings.value("recent" + str(unichr(48 + i)), "").toString())
+            self.recent.append(self.settings.value("recent" + str(unichr(48 + i)), "").toString())
         self.redrawMenu()
 
         # generic slots and signals
@@ -68,14 +67,13 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
 
         self.btnBrowse.clicked.connect(self.browseEvent)
         self.btnRelink.clicked.connect(self.doRelink)
-        app = QtGui.QApplication.instance()
+        # app = QtGui.QApplication.instance()
 
         self.btnCancel.hide()
-        
+
         # set status bar
         self.statusbar.showMessage("System Status | Idle")
 
-        
     def closeEvent(self, e):
         self.exit_flag = True
         try:
@@ -84,16 +82,16 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
                 e.ignore()
             else:
                 self._closeEvent(0)
-        except:
+        except NameError:
             pass
-     
-    def _closeEvent(self, e): 
+
+    def _closeEvent(self, e):
         # Write window size and position to config file
         self.settings.setValue("size", self.size())
         self.settings.setValue("pos", self.pos())
         # Write recent paths to config file
         for i in range(self.max_history):
-           self.settings.setValue("recent" + str(unichr(48 + i)), self.recent[i])
+            self.settings.setValue("recent" + str(unichr(48 + i)), self.recent[i])
         self.exit_flag = True
         # if relinking is taking place,
         try:
@@ -102,48 +100,45 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
                 self.update_links_thread.running = False
             else:
                 sys.exit()
-        except:
+        except NameError:
             sys.exit()
-            
-       
+
     def browseEvent(self):
         default_dir = self.recent[0] or os.path.join(os.path.expanduser("~"), "Desktop")
         my_dir = QtGui.QFileDialog.getExistingDirectory(self, "Open a folder", default_dir, QtGui.QFileDialog.ShowDirsOnly)
         if my_dir != "":
             self.changePath(my_dir)
-        
-    
+
     def changePath(self, my_dir):
         if my_dir in self.recent:
             self.recent.remove(my_dir)
         self.recent = [my_dir] + self.recent[:self.max_history - 1]
         self.redrawMenu()
 
-
     def redrawMenu(self):
         for i in range(1, self.max_history):
-           getattr(self, "actionRecent" + str(unichr(48 + i))).setText(self.recent[i])
-           getattr(self, "actionRecent" + str(unichr(48 + i))).setVisible(self.recent[i] != "")
+            getattr(self, "actionRecent" + str(unichr(48 + i))).setText(self.recent[i])
+            getattr(self, "actionRecent" + str(unichr(48 + i))).setVisible(self.recent[i] != "")
         self.lePath.setText(self.recent[0])
 
     def doRecent1(self):
         self.changePath(self.recent[1])
-        
+
     def doRecent2(self):
         self.changePath(self.recent[2])
-        
+
     def doRecent3(self):
         self.changePath(self.recent[3])
-        
+
     def doRecent4(self):
         self.changePath(self.recent[4])
-        
+
     def doRecent5(self):
         self.changePath(self.recent[5])
-        
+
     def doRecent6(self):
         self.changePath(self.recent[6])
-        
+
     def doRelink(self):
         # if path is not valid then bail
         if not os.path.isdir(self.recent[0]):
@@ -163,24 +158,24 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         self.connect(self.update_links_thread, SIGNAL("finished()"), self.update_done)
         self.update_links_thread.start()
         self.btnCancel.clicked.connect(self.update_abort)
- 
+
     def clear_textarea(self):
         self.textArea.clear()
         self.textArea.centerOnScroll = True
-        
+
     def update_textarea(self, Qstring):
         self.textArea.append(Qstring)
         self.textArea.ensureCursorVisible()
 
     def update_progressbar(self, num):
         self.progressBar.setValue(num)
-        
+
     def update_statusbar(self, message):
         self.statusbar.showMessage("System Status | " + message)
 
     def update_abort(self):
         self.update_links_thread.running = False
-        
+
     def update_done(self):
         self.btnCancel.hide()
         self.btnRelink.show()
@@ -192,7 +187,7 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         # If exit was requested close program
         if self.exit_flag:
             self._closeEvent(0)
-        
+
 
 class update_links_thread(QThread):
 
@@ -210,7 +205,7 @@ class update_links_thread(QThread):
 
     def _file_scan(path):
         pass
-        
+
     def run(self):
         self.running = True
         self.file_list = []
@@ -236,9 +231,10 @@ class update_links_thread(QThread):
             self.emit(SIGNAL('update_progressbar(int)'), int(float(current_count) / total_files * 100))
             self.emit(SIGNAL('update_statusbar(QString)'), 'Relinking %d of %d' % (current_count, total_files))
             self.emit(SIGNAL('update_textarea(QString)'), file[len(self.path) + 1:])
-            excel.DisplayAlerts = False 
+            excel.DisplayAlerts = False
             workbook = excel.Workbooks.Open(file, UpdateLinks=3)
             excel.Workbooks.Close()
+            del workbook
             if not self.running:
                 break
 
@@ -251,9 +247,6 @@ class update_links_thread(QThread):
             self.emit(SIGNAL('update_statusbar(QString)'), 'Canceled')
             self.emit(SIGNAL('update_progressbar(int)'), 0)
         self.sleep(1)
-        
-     
-		
 
 
 def main():
