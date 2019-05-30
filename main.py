@@ -4,6 +4,8 @@ from PyQt4 import QtGui  # Import the PyQt4 module we'll need
 from PyQt4 import QtCore
 from PyQt4.QtCore import QSettings, QSize, QPoint
 from PyQt4.QtCore import QThread, SIGNAL
+from excel import ExcelDocument
+from pathlib import Path
 from win32com.client import DispatchEx
 import pythoncom
 import sys  # We need sys so that we can pass argv to QApplication
@@ -78,6 +80,7 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         self.statusbar.showMessage("System Status | Idle")
 
     def closeEvent(self, e):
+        print("dododod")
         self.exit_flag = True
         try:
             if self.update_links_thread:
@@ -208,40 +211,43 @@ class update_links_thread(QThread):
 
     def _file_scan(path):
         pass
+        
+    def excel_files(self, mypath):
+        for root, dirs, files in os.walk(str(mypath)):
+            for file in files:
+                if self._file_filter(root, file):
+                    yield [root, file]
 
     def run(self):
         self.running = True
         self.file_list = []
         self.emit(SIGNAL('update_progressbar(int)'), 0)
         self.emit(SIGNAL('clear_textarea()'))
-        for root, dirs, files in os.walk(str(self.path)):
-            for file in files:
-                if self._file_filter(root, file):
-                    self.file_list.append(os.path.join(root, file))
-                    self.emit(SIGNAL('update_statusbar(QString)'), 'Files Found ' + str(len(self.file_list)))
-                    if not self.running:
-                        self.emit(SIGNAL('update_statusbar(QString)'), 'Canceled')
-                        return
+        for root, file in self.excel_files(self.path):
+            self.file_list.append(os.path.join(root, file))
+            self.emit(SIGNAL('update_statusbar(QString)'), 'Files Found ' + str(len(self.file_list)))
+            if not self.running:
+                self.emit(SIGNAL('update_statusbar(QString)'), 'Canceled')
+                return
         self.emit(SIGNAL('update_statusbar(QString)'), 'Scanning Completed ' + str(len(self.file_list)) + ' Files Found')
         total_files = len(self.file_list)
         current_count = 0
         pythoncom.CoInitialize()
-        excel = DispatchEx("Excel.Application")
-        excel.Visible = 0
+        excel = ExcelDocument(visible=False)
         self.emit(SIGNAL('update_statusbar(QString)'), 'Starting Excel')
         for file in self.file_list:
             current_count += 1
             self.emit(SIGNAL('update_progressbar(int)'), int(float(current_count) / total_files * 100))
             self.emit(SIGNAL('update_statusbar(QString)'), 'Relinking %d of %d' % (current_count, total_files))
             self.emit(SIGNAL('update_textarea(QString)'), file[len(self.path) + 1:])
-            excel.DisplayAlerts = False
-            workbook = excel.Workbooks.Open(file, UpdateLinks=3)
-            excel.Workbooks.Close()
-            del workbook
+            excel.display_alerts(False)
+            excel.open(file, updatelinks=3)
+            excel.save()
+            excel.close()
             if not self.running:
                 break
 
-        excel.Application.Quit()
+        excel.quit()
         pythoncom.CoUninitialize()
         if current_count == total_files:
             self.emit(SIGNAL('update_statusbar(QString)'), 'Completed')
