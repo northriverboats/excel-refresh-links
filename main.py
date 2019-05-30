@@ -31,7 +31,6 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         self.setupUi(self)
 
         self.max_history = 7
-        self.output_text = ""
         self.exit_flag = False
 
         if getattr(sys, 'frozen', False):
@@ -77,6 +76,7 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         # app = QtGui.QApplication.instance()
 
         self.btnCancel.hide()
+        self.actionSave.setEnabled(False)
 
         # set status bar
         self.statusbar.showMessage("System Status | Idle")
@@ -173,7 +173,7 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
                          about_msg, QtGui.QMessageBox.Ok)
 
     def doSave(self):
-        text = self.taOutput.toPlainText()
+        text = self.textArea.toPlainText()
         if text == "":
             return
         name = QtGui.QFileDialog.getSaveFileName(self, 'Save File', '', 'TEXT (*.txt)')
@@ -185,6 +185,7 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
     def clear_textarea(self):
         self.textArea.clear()
         self.textArea.centerOnScroll = True
+        self.actionSave.setEnabled(False)
 
     def update_textarea(self, Qstring):
         self.textArea.append(Qstring)
