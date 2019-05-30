@@ -63,6 +63,7 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         # generic slots and signals
         self.actionAbout.triggered.connect(self.doAbout)
         self.actionSave.triggered.connect(self.doSave)
+        self.actionClear_Output.triggered.connect(self.clear_textarea)
         self.actionExit.triggered.connect(self._closeEvent)
         self.actionRelink.triggered.connect(self.doRelink)
         self.actionRecent1.triggered.connect(self.doRecent1)
@@ -74,10 +75,12 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
 
         self.btnBrowse.clicked.connect(self.browseEvent)
         self.btnRelink.clicked.connect(self.doRelink)
+
         # app = QtGui.QApplication.instance()
 
         self.btnCancel.hide()
         self.actionSave.setEnabled(False)
+        self.actionClear_Output.setEnabled(False)
 
         # set status bar
         self.statusbar.showMessage("System Status | Idle")
@@ -177,7 +180,7 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         if message == "Completed" or message == "Canceled":
             reply = QtGui.QMessageBox.information(self, 'About', message, QtGui.QMessageBox.Ok)
             self.actionSave.setEnabled(True)
-            # self.actionClear_Output.setEnabled(True)
+            self.actionClear_Output.setEnabled(True)
             self.unblock_actions()
 
     def update_abort(self):
@@ -208,6 +211,7 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
     def unblock_actions(self):
         self.btnRelink.show()
         self.btnCancel.hide()
+        self.btnCancel.setEnabled(True)
         self.btnBrowse.setEnabled(True)
         self.lePath.setEnabled(True)
         self.actionRelink.setDisabled(False)
@@ -247,6 +251,7 @@ class update_links_thread(QThread):
         self.file_list = []
         self.update_progressbar.emit(0)
         self.clear_textarea.emit()
+        self.update_textarea.emit("Relinking Files in {}\n".format(self.path))
         for root, file in self.excel_files(self.path):
             self.file_list.append(os.path.join(root, file))
             self.update_statusbar.emit('Files Found ' + str(len(self.file_list)))

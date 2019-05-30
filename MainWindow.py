@@ -2,8 +2,7 @@
 
 # Form implementation generated from reading ui file 'MainWindow.ui'
 #
-# Created: Mon Apr 22 14:08:38 2019
-#      by: PyQt4 UI code generator 4.10.3
+# Created by: PyQt4 UI code generator 4.11.4
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -73,6 +72,8 @@ class Ui_MainWindow(object):
         self.menu_Recent.setObjectName(_fromUtf8("menu_Recent"))
         self.menuHelp = QtGui.QMenu(self.menubar)
         self.menuHelp.setObjectName(_fromUtf8("menuHelp"))
+        self.menuEdit = QtGui.QMenu(self.menubar)
+        self.menuEdit.setObjectName(_fromUtf8("menuEdit"))
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtGui.QStatusBar(MainWindow)
         self.statusbar.setObjectName(_fromUtf8("statusbar"))
@@ -99,6 +100,8 @@ class Ui_MainWindow(object):
         self.actionRecent5_2.setObjectName(_fromUtf8("actionRecent5_2"))
         self.actionRecent6 = QtGui.QAction(MainWindow)
         self.actionRecent6.setObjectName(_fromUtf8("actionRecent6"))
+        self.actionClear_Output = QtGui.QAction(MainWindow)
+        self.actionClear_Output.setObjectName(_fromUtf8("actionClear_Output"))
         self.menu_Recent.addAction(self.actionRecent1)
         self.menu_Recent.addAction(self.actionRecent2)
         self.menu_Recent.addAction(self.actionRecent3)
@@ -111,7 +114,9 @@ class Ui_MainWindow(object):
         self.menuFile.addSeparator()
         self.menuFile.addAction(self.actionExit)
         self.menuHelp.addAction(self.actionAbout)
+        self.menuEdit.addAction(self.actionClear_Output)
         self.menubar.addAction(self.menuFile.menuAction())
+        self.menubar.addAction(self.menuEdit.menuAction())
         self.menubar.addAction(self.menuHelp.menuAction())
 
         self.retranslateUi(MainWindow)
@@ -127,6 +132,7 @@ class Ui_MainWindow(object):
         self.menuFile.setTitle(_translate("MainWindow", "&File", None))
         self.menu_Recent.setTitle(_translate("MainWindow", "&Recent", None))
         self.menuHelp.setTitle(_translate("MainWindow", "&Help", None))
+        self.menuEdit.setTitle(_translate("MainWindow", "&Edit", None))
         self.actionSave.setText(_translate("MainWindow", "&Save", None))
         self.actionSave.setShortcut(_translate("MainWindow", "Ctrl+S", None))
         self.actionExit.setText(_translate("MainWindow", "E&xit", None))
@@ -142,4 +148,5 @@ class Ui_MainWindow(object):
         self.actionRecent5.setText(_translate("MainWindow", "recent5", None))
         self.actionRecent5_2.setText(_translate("MainWindow", "recent5", None))
         self.actionRecent6.setText(_translate("MainWindow", "recent6", None))
+        self.actionClear_Output.setText(_translate("MainWindow", "Clear Output", None))
 
