@@ -2,7 +2,7 @@
 
 from PyQt4 import QtGui  # Import the PyQt4 module we'll need
 from PyQt4 import QtCore
-from PyQt4.QtCore import QSettings, QSize
+from PyQt4.QtCore import QSettings, QSize, QPoint
 from PyQt4.QtCore import QThread, SIGNAL
 from win32com.client import DispatchEx
 import pythoncom
@@ -10,11 +10,14 @@ import sys  # We need sys so that we can pass argv to QApplication
 import os
 import MainWindow  # This file holds our MainWindow and all design related things
 
-# ToDo
-# - Consider dragEnable 1 folder onto lePath
+"""
+Notes:
+Lib\site-packages\PyQt4\pyuic4 MainWindow.ui  -o MainWindow.py
+Scripts\pyinstaller.exe --onefile --windowed --icon options.ico  --name "Excel Refresh Links" "Excel Refresh Links FWW.spec" main.py
 
-# C:\Python27\Lib\site-packages\PyQt4\pyuic4 MainWindow.ui  -o MainWindow.py
-# pyinstaller --onefile --windowed --icon relink.ico  --name "Excel Refresh Links" "Excel Refresh Links FWW.spec" main.py
+ToDo's
+- ToDo's go here
+"""
 
 # Excel Constants
 
@@ -45,14 +48,14 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         self.settings = QSettings()
 
         # Initial window size/pos last saved. Use default values for first time
-        self.resize(self.settings.value("size", QSize(900, 500)).toSize())
-        self.move(self.settings.value("pos", QSize(0, 0)).toPoint())
+        self.resize(self.settings.value("size", QSize(900, 500)))
+        self.move(self.settings.value("pos", QPoint(0, 0)))
         # need rules to keep window no larger than desktop
         # need rules to keep window pos visible on screen
 
         self.recent = []
         for i in range(self.max_history):
-            self.recent.append(self.settings.value("recent" + str(unichr(48 + i)), "").toString())
+            self.recent.append(self.settings.value("recent" + str(chr(48 + i)), ""))
         self.redrawMenu()
 
         # generic slots and signals
@@ -91,7 +94,7 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         self.settings.setValue("pos", self.pos())
         # Write recent paths to config file
         for i in range(self.max_history):
-            self.settings.setValue("recent" + str(unichr(48 + i)), self.recent[i])
+            self.settings.setValue("recent" + str(chr(48 + i)), self.recent[i])
         self.exit_flag = True
         # if relinking is taking place,
         try:
@@ -117,8 +120,8 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
 
     def redrawMenu(self):
         for i in range(1, self.max_history):
-            getattr(self, "actionRecent" + str(unichr(48 + i))).setText(self.recent[i])
-            getattr(self, "actionRecent" + str(unichr(48 + i))).setVisible(self.recent[i] != "")
+            getattr(self, "actionRecent" + str(chr(48 + i))).setText(self.recent[i])
+            getattr(self, "actionRecent" + str(chr(48 + i))).setVisible(self.recent[i] != "")
         self.lePath.setText(self.recent[0])
 
     def doRecent1(self):
