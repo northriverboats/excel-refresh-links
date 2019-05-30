@@ -61,6 +61,8 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         self.redrawMenu()
 
         # generic slots and signals
+        self.actionAbout.triggered.connect(self.doAbout)
+        self.actionSave.triggered.connect(self.doSave)
         self.actionExit.triggered.connect(self._closeEvent)
         self.actionRelink.triggered.connect(self.doRelink)
         self.actionRecent1.triggered.connect(self.doRecent1)
@@ -80,7 +82,8 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         self.statusbar.showMessage("System Status | Idle")
 
     def closeEvent(self, e):
-        print("dododod")
+        self._closeEvent(0)
+        """
         self.exit_flag = True
         try:
             if self.update_links_thread:
@@ -90,6 +93,7 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
                 self._closeEvent(0)
         except NameError:
             pass
+        """
 
     def _closeEvent(self, e):
         # Write window size and position to config file
@@ -99,7 +103,10 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         for i in range(self.max_history):
             self.settings.setValue("recent" + str(chr(48 + i)), self.recent[i])
         self.exit_flag = True
+        sys.exit(0)
+        
         # if relinking is taking place,
+        """
         try:
             if self.update_links_thread.running:
                 self.update_statusbar('Canceled')
@@ -108,6 +115,7 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
                 sys.exit()
         except NameError:
             sys.exit()
+        """
 
     def browseEvent(self):
         default_dir = self.recent[0] or os.path.join(os.path.expanduser("~"), "Desktop")
@@ -149,21 +157,30 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         # if path is not valid then bail
         if not os.path.isdir(self.recent[0]):
             self.update_statusbar('Path not valid')
-        self.btnRelink.hide()
-        self.btnCancel.show()
-        self.btnBrowse.setEnabled(False)
-        self.lePath.setEnabled(False)
-        self.actionRelink.setDisabled(True)
-        self.menu_Recent.setDisabled(True)
-        self.actionSave.setDisabled(True)
+        self.block_actions()
         self.update_links_thread = update_links_thread(self.recent[0])
-        self.connect(self.update_links_thread, SIGNAL('update_statusbar(QString)'), self.update_statusbar)
-        self.connect(self.update_links_thread, SIGNAL('update_progressbar(int)'), self.update_progressbar)
-        self.connect(self.update_links_thread, SIGNAL('clear_textarea()'), self.clear_textarea)
-        self.connect(self.update_links_thread, SIGNAL('update_textarea(QString)'), self.update_textarea)
-        self.connect(self.update_links_thread, SIGNAL("finished()"), self.update_done)
+        self.update_links_thread.update_statusbar.connect(self.update_statusbar)
+        self.update_links_thread.update_progressbar.connect(self.update_progressbar)
+        self.update_links_thread.clear_textarea.connect(self.clear_textarea)
+        self.update_links_thread.update_textarea.connect(self.update_textarea)
+        self.update_links_thread.finished.connect(self.update_done)
         self.update_links_thread.start()
         self.btnCancel.clicked.connect(self.update_abort)
+
+    def doAbout(self, event):
+        about_msg = "NRB Excel Relink Sheets\n©2019 North River Boats\nBy Fred Warren"
+        reply = QtGui.QMessageBox.information(self, 'About',
+                         about_msg, QtGui.QMessageBox.Ok)
+
+    def doSave(self):
+        text = self.taOutput.toPlainText()
+        if text == "":
+            return
+        name = QtGui.QFileDialog.getSaveFileName(self, 'Save File', '', 'TEXT (*.txt)')
+        if name:
+            file = open(name,'w')
+            file.write(text)
+            file.close()
 
     def clear_textarea(self):
         self.textArea.clear()
@@ -178,9 +195,15 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
 
     def update_statusbar(self, message):
         self.statusbar.showMessage("System Status | " + message)
+        if message == "Completed" or message == "Canceled":
+            reply = QtGui.QMessageBox.information(self, 'About', message, QtGui.QMessageBox.Ok)
+            self.actionSave.setEnabled(True)
+            # self.actionClear_Output.setEnabled(True)
+            self.unblock_actions()
 
     def update_abort(self):
         self.update_links_thread.running = False
+        self.btnCancel.setDisabled(True)
 
     def update_done(self):
         self.btnCancel.hide()
@@ -194,8 +217,30 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         if self.exit_flag:
             self._closeEvent(0)
 
+    def block_actions(self):
+        self.btnRelink.hide()
+        self.btnCancel.show()
+        self.btnBrowse.setEnabled(False)
+        self.lePath.setEnabled(False)
+        self.actionRelink.setDisabled(True)
+        self.menu_Recent.setDisabled(True)
+        self.actionSave.setDisabled(True)
+        
+    def unblock_actions(self):
+        self.btnRelink.show()
+        self.btnCancel.hide()
+        self.btnBrowse.setEnabled(True)
+        self.lePath.setEnabled(True)
+        self.actionRelink.setDisabled(False)
+        self.menu_Recent.setDisabled(False)
+        self.actionSave.setDisabled(False)
 
 class update_links_thread(QThread):
+    update_statusbar = QtCore.pyqtSignal(str)
+    update_progressbar = QtCore.pyqtSignal(int)
+    clear_textarea = QtCore.pyqtSignal()
+    update_textarea = QtCore.pyqtSignal(str)
+    finished = QtCore.pyqtSignal()
 
     def __init__(self, path):
         QThread.__init__(self)
@@ -221,25 +266,25 @@ class update_links_thread(QThread):
     def run(self):
         self.running = True
         self.file_list = []
-        self.emit(SIGNAL('update_progressbar(int)'), 0)
-        self.emit(SIGNAL('clear_textarea()'))
+        self.update_progressbar.emit(0)
+        self.clear_textarea.emit()
         for root, file in self.excel_files(self.path):
             self.file_list.append(os.path.join(root, file))
-            self.emit(SIGNAL('update_statusbar(QString)'), 'Files Found ' + str(len(self.file_list)))
+            self.update_statusbar.emit('Files Found ' + str(len(self.file_list)))
             if not self.running:
-                self.emit(SIGNAL('update_statusbar(QString)'), 'Canceled')
+                self.update_statusbar.emit('Canceled')
                 return
-        self.emit(SIGNAL('update_statusbar(QString)'), 'Scanning Completed ' + str(len(self.file_list)) + ' Files Found')
+        self.update_statusbar.emit('Scanning Completed ' + str(len(self.file_list)) + ' Files Found')
         total_files = len(self.file_list)
         current_count = 0
         pythoncom.CoInitialize()
         excel = ExcelDocument(visible=False)
-        self.emit(SIGNAL('update_statusbar(QString)'), 'Starting Excel')
+        self.update_statusbar.emit('Starting Excel')
         for file in self.file_list:
             current_count += 1
-            self.emit(SIGNAL('update_progressbar(int)'), int(float(current_count) / total_files * 100))
-            self.emit(SIGNAL('update_statusbar(QString)'), 'Relinking %d of %d' % (current_count, total_files))
-            self.emit(SIGNAL('update_textarea(QString)'), file[len(self.path) + 1:])
+            self.update_progressbar.emit(int(float(current_count) / total_files * 100))
+            self.update_statusbar.emit('Relinking %d of %d' % (current_count, total_files))
+            self.update_textarea.emit(file[len(self.path) + 1:])
             excel.display_alerts(False)
             excel.open(file, updatelinks=3)
             excel.save()
@@ -250,11 +295,11 @@ class update_links_thread(QThread):
         excel.quit()
         pythoncom.CoUninitialize()
         if current_count == total_files:
-            self.emit(SIGNAL('update_statusbar(QString)'), 'Completed')
-            self.emit(SIGNAL('update_progressbar(int)'), 100)
+            self.update_statusbar.emit('Completed')
+            self.update_progressbar.emit(100)
         else:
-            self.emit(SIGNAL('update_statusbar(QString)'), 'Canceled')
-            self.emit(SIGNAL('update_progressbar(int)'), 0)
+            self.update_statusbar.emit('Canceled')
+
         self.sleep(1)
 
 
