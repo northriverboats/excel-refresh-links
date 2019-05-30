@@ -18,7 +18,8 @@ Lib\site-packages\PyQt4\pyuic4 MainWindow.ui  -o MainWindow.py
 Scripts\pyinstaller.exe --onefile --windowed --icon options.ico  --name "Excel Refresh Links" "Excel Refresh Links FWW.spec" main.py
 
 ToDo's
-- ToDo's go here
+- Add Clear Text to the menu
+- Don't clear text on every run
 """
 
 # Excel Constants
@@ -83,17 +84,6 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
 
     def closeEvent(self, e):
         self._closeEvent(0)
-        """
-        self.exit_flag = True
-        try:
-            if self.update_links_thread:
-                self.update_links_thread.running = False
-                e.ignore()
-            else:
-                self._closeEvent(0)
-        except NameError:
-            pass
-        """
 
     def _closeEvent(self, e):
         # Write window size and position to config file
@@ -104,18 +94,6 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
             self.settings.setValue("recent" + str(chr(48 + i)), self.recent[i])
         self.exit_flag = True
         sys.exit(0)
-        
-        # if relinking is taking place,
-        """
-        try:
-            if self.update_links_thread.running:
-                self.update_statusbar('Canceled')
-                self.update_links_thread.running = False
-            else:
-                sys.exit()
-        except NameError:
-            sys.exit()
-        """
 
     def browseEvent(self):
         default_dir = self.recent[0] or os.path.join(os.path.expanduser("~"), "Desktop")
