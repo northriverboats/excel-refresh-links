@@ -6,6 +6,7 @@ from PyQt4.QtCore import QSettings, QSize, QPoint
 from PyQt4.QtCore import QThread, SIGNAL
 from excel import ExcelDocument
 from pathlib import Path
+from time import sleep
 from win32com.client import DispatchEx
 import pythoncom
 import sys  # We need sys so that we can pass argv to QApplication
@@ -271,6 +272,7 @@ class update_links_thread(QThread):
             self.update_textarea.emit(file[len(self.path) + 1:])
             excel.display_alerts(False)
             excel.open(file, updatelinks=3)
+            sleep(2) # give it some time to work it's magic
             excel.save()
             excel.close()
             if not self.running:
