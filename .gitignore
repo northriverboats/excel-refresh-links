@@ -1,8 +1,11 @@
 .direnv/*
 __pycache__/*
 build/*
+.venv/*
+venv/*
 dist/*
 .env
+.vscode/*
 *.pyc
 Lib/*
 Scripts/*
