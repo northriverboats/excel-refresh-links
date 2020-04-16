@@ -35,6 +35,15 @@ class Ui_MainWindow(object):
         self.gridLayout.addLayout(self.horizontalLayout, 3, 0, 1, 1)
         self.horizontalLayout_8 = QtGui.QHBoxLayout()
         self.horizontalLayout_8.setObjectName(_fromUtf8("horizontalLayout_8"))
+        self.leSearch = QtGui.QLineEdit(self.centralwidget)
+        self.leSearch.setObjectName(_fromUtf8("leSearch"))
+        self.horizontalLayout_8.addWidget(self.leSearch)
+        self.leReplace = QtGui.QLineEdit(self.centralwidget)
+        self.leReplace.setObjectName(_fromUtf8("leReplace"))
+        self.horizontalLayout_8.addWidget(self.leReplace)
+        self.cbPartialMatch = QtGui.QCheckBox(self.centralwidget)
+        self.cbPartialMatch.setObjectName(_fromUtf8("cbPartialMatch"))
+        self.horizontalLayout_8.addWidget(self.cbPartialMatch)
         spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         self.horizontalLayout_8.addItem(spacerItem)
         self.btnCancel = QtGui.QPushButton(self.centralwidget)
@@ -121,9 +130,19 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
+        MainWindow.setTabOrder(self.btnCancel, self.btnRelink)
+        MainWindow.setTabOrder(self.btnRelink, self.lePath)
+        MainWindow.setTabOrder(self.lePath, self.btnBrowse)
+        MainWindow.setTabOrder(self.btnBrowse, self.textArea)
+        MainWindow.setTabOrder(self.textArea, self.leSearch)
+        MainWindow.setTabOrder(self.leSearch, self.leReplace)
+        MainWindow.setTabOrder(self.leReplace, self.cbPartialMatch)
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow", None))
+        self.leSearch.setPlaceholderText(_translate("MainWindow", "Search", None))
+        self.leReplace.setPlaceholderText(_translate("MainWindow", "Replace", None))
+        self.cbPartialMatch.setText(_translate("MainWindow", "Partial Match", None))
         self.btnCancel.setText(_translate("MainWindow", "&Cancel", None))
         self.btnCancel.setShortcut(_translate("MainWindow", "Ctrl+C", None))
         self.btnRelink.setText(_translate("MainWindow", "Relink", None))
@@ -149,4 +168,14 @@ class Ui_MainWindow(object):
         self.actionRecent5_2.setText(_translate("MainWindow", "recent5", None))
         self.actionRecent6.setText(_translate("MainWindow", "recent6", None))
         self.actionClear_Output.setText(_translate("MainWindow", "Clear Output", None))
+
+
+if __name__ == "__main__":
+    import sys
+    app = QtGui.QApplication(sys.argv)
+    MainWindow = QtGui.QMainWindow()
+    ui = Ui_MainWindow()
+    ui.setupUi(MainWindow)
+    MainWindow.show()
+    sys.exit(app.exec_())
 

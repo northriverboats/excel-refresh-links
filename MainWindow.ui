@@ -21,6 +21,27 @@
     <item row="4" column="0">
      <layout class="QHBoxLayout" name="horizontalLayout_8">
       <item>
+       <widget class="QLineEdit" name="leSearch">
+        <property name="placeholderText">
+         <string>Search</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="leReplace">
+        <property name="placeholderText">
+         <string>Replace</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="cbPartialMatch">
+        <property name="text">
+         <string>Partial Match</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <spacer name="horizontalSpacer">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -209,6 +230,16 @@
    </property>
   </action>
  </widget>
+ <tabstops>
+  <tabstop>btnCancel</tabstop>
+  <tabstop>btnRelink</tabstop>
+  <tabstop>lePath</tabstop>
+  <tabstop>btnBrowse</tabstop>
+  <tabstop>textArea</tabstop>
+  <tabstop>leSearch</tabstop>
+  <tabstop>leReplace</tabstop>
+  <tabstop>cbPartialMatch</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>
