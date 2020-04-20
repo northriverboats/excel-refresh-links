@@ -1,19 +1,19 @@
 #!/usr/bin/env python
 
-from PyQt4 import QtGui  # Import the PyQt4 module we'll need
+from PyQt4 import QtGui
 from PyQt4 import QtCore
-from PyQt4.QtCore import QSettings, QSize, QPoint
-from PyQt4.QtCore import QThread, SIGNAL
+from PyQt4.QtCore import QSettings, QSize, QPoint # pylint: disable-msg=E0611
+from PyQt4.QtCore import QThread, SIGNAL # pylint: disable-msg=E0611
 from excel import ExcelDocument
 from pathlib import Path
 from time import sleep
 from win32com.client import DispatchEx
-import pythoncom
+from pythoncom import CoInitialize, CoUninitialize # pylint: disable-msg=E0611
 import sys  # We need sys so that we can pass argv to QApplication
 import os
 import MainWindow  # This file holds our MainWindow and all design related things
 
-"""
+r"""
 Notes:
 Lib\site-packages\PyQt4\pyuic4 MainWindow.ui  -o MainWindow.py
 Scripts\pyinstaller.exe --onefile --windowed --icon options.ico  --name "Excel Refresh Links" "Excel Refresh Links FWW.spec" main.py
@@ -29,14 +29,14 @@ ToDo's
 class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
 
     def __init__(self):
-        super(self.__class__, self).__init__()
+        super().__init__()
         self.setupUi(self)
 
         self.max_history = 7
         self.exit_flag = False
 
         if getattr(sys, 'frozen', False):
-            bundle_dir = sys._MEIPASS
+            bundle_dir = sys._MEIPASS # pylint: disable=no-member
         else:
             # we are running in a normal Python environment
             bundle_dir = os.path.dirname(os.path.abspath(__file__))
@@ -151,7 +151,7 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
 
     def doAbout(self, event):
         about_msg = "NRB Excel Relink Sheets\n©2019 North River Boats\nBy Fred Warren"
-        reply = QtGui.QMessageBox.information(self, 'About',
+        _ = QtGui.QMessageBox.information(self, 'About',
                          about_msg, QtGui.QMessageBox.Ok)
 
     def doSave(self):
@@ -179,7 +179,7 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
     def update_statusbar(self, message):
         self.statusbar.showMessage("System Status | " + message)
         if message == "Completed" or message == "Canceled":
-            reply = QtGui.QMessageBox.information(self, 'About', message, QtGui.QMessageBox.Ok)
+            _ = QtGui.QMessageBox.information(self, 'About', message, QtGui.QMessageBox.Ok)
             self.actionSave.setEnabled(True)
             self.actionClear_Output.setEnabled(True)
             self.unblock_actions()
@@ -238,11 +238,11 @@ class update_links_thread(QThread):
             return False
         return (file.endswith(".xls") or file.endswith(".xlsx") or file.endswith(".xlsm"))
 
-    def _file_scan(path):
+    def _file_scan(self, path):
         pass
         
     def excel_files(self, mypath):
-        for root, dirs, files in os.walk(str(mypath)):
+        for root, _dirs, files in os.walk(str(mypath)):
             for file in files:
                 if self._file_filter(root, file):
                     yield [root, file]
@@ -262,7 +262,7 @@ class update_links_thread(QThread):
         self.update_statusbar.emit('Scanning Completed ' + str(len(self.file_list)) + ' Files Found')
         total_files = len(self.file_list)
         current_count = 0
-        pythoncom.CoInitialize()
+        CoInitialize()
         excel = ExcelDocument(visible=False)
         self.update_statusbar.emit('Starting Excel')
         for file in self.file_list:
@@ -272,6 +272,7 @@ class update_links_thread(QThread):
             self.update_textarea.emit(file[len(self.path) + 1:])
             excel.display_alerts(False)
             excel.open(file, updatelinks=3)
+            # future home of search and replace
             sleep(2) # give it some time to work it's magic
             excel.save()
             excel.close()
@@ -279,7 +280,7 @@ class update_links_thread(QThread):
                 break
 
         excel.quit()
-        pythoncom.CoUninitialize()
+        CoUninitialize()
         if current_count == total_files:
             self.update_statusbar.emit('Completed')
             self.update_progressbar.emit(100)
