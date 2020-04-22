@@ -139,8 +139,13 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         # if path is not valid then bail
         if not os.path.isdir(self.recent[0]):
             self.update_statusbar('Path not valid')
+        search = self.leSearch.text()
+        replace = self.leReplace.text()
+        partial = self.cbPartialMatch.checkState()
+        if not search and replace:
+            self.leReplace.setText("") 
         self.block_actions()
-        self.update_links_thread = update_links_thread(self.recent[0])
+        self.update_links_thread = update_links_thread(self.recent[0], search, replace, partial)
         self.update_links_thread.update_statusbar.connect(self.update_statusbar)
         self.update_links_thread.update_progressbar.connect(self.update_progressbar)
         self.update_links_thread.clear_textarea.connect(self.clear_textarea)
@@ -226,9 +231,12 @@ class update_links_thread(QThread):
     update_textarea = QtCore.pyqtSignal(str)
     finished = QtCore.pyqtSignal()
 
-    def __init__(self, path):
+    def __init__(self, path, search, replace, partial):
         QThread.__init__(self)
         self.path = path
+        self.search = search
+        self.replace = replace
+        self.partial = partial
 
     def __del__(self):
         self.wait()
@@ -246,6 +254,10 @@ class update_links_thread(QThread):
             for file in files:
                 if self._file_filter(root, file):
                     yield [root, file]
+
+    def search_and_replace(self):
+        if not self.search:
+            return
 
     def run(self):
         self.running = True
@@ -269,10 +281,11 @@ class update_links_thread(QThread):
             current_count += 1
             self.update_progressbar.emit(int(float(current_count) / total_files * 100))
             self.update_statusbar.emit('Relinking %d of %d' % (current_count, total_files))
+            # Set text color
             self.update_textarea.emit(file[len(self.path) + 1:])
             excel.display_alerts(False)
             excel.open(file, updatelinks=3)
-            # future home of search and replace
+            self.search_and_replace()
             sleep(2) # give it some time to work it's magic
             excel.save()
             excel.close()
