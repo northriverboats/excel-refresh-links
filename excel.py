@@ -22,6 +22,7 @@ xlformatfromleftorabove = 0  # row insert from above / column inserst from left
 xlformatfromrightorbelow = 1 # row insert from below / column inserst from right
 xlWhole = 1
 xlPart = 2
+xlFormulas =  -4123
 xlValues = -4163
 xlByRows = 1
 xlByColumns = 2
@@ -100,11 +101,11 @@ class ExcelDocument(object):
         break
     return output    
     
-  def get_range(self, range):
+  def get_range(self, *argv):
     """
     Get a range object for the specified range or single cell.
     """
-    return self.app.ActiveWorkbook.Sheets(self.sheet).Range(range)
+    return self.app.ActiveWorkbook.Sheets(self.sheet).Range(*argv)
 
   def get_cell(self, row, col):
     """
