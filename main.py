@@ -4,7 +4,8 @@ from PyQt4 import QtGui
 from PyQt4 import QtCore
 from PyQt4.QtCore import QSettings, QSize, QPoint # pylint: disable-msg=E0611
 from PyQt4.QtCore import QThread, SIGNAL # pylint: disable-msg=E0611
-from excel import ExcelDocument
+from PyQt4.QtGui import QColor # pylint: disable-msg=E0611
+from excel import ExcelDocument, xlPart, xlWhole, xlValues
 from pathlib import Path
 from time import sleep
 from win32com.client import DispatchEx
@@ -174,7 +175,8 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         self.textArea.centerOnScroll = True
         self.actionSave.setEnabled(False)
 
-    def update_textarea(self, Qstring):
+    def update_textarea(self, Qstring, Qcolor):
+        self.textArea.setTextColor(Qcolor)
         self.textArea.append(Qstring)
         self.textArea.ensureCursorVisible()
 
@@ -224,11 +226,16 @@ class MainAppWindow(QtGui.QMainWindow, MainWindow.Ui_MainWindow):
         self.menu_Recent.setDisabled(False)
         self.actionSave.setDisabled(False)
 
+
+""" 
+=============================================================================
+"""
+
 class update_links_thread(QThread):
     update_statusbar = QtCore.pyqtSignal(str)
     update_progressbar = QtCore.pyqtSignal(int)
     clear_textarea = QtCore.pyqtSignal()
-    update_textarea = QtCore.pyqtSignal(str)
+    update_textarea = QtCore.pyqtSignal(str, QColor)
     finished = QtCore.pyqtSignal()
 
     def __init__(self, path, search, replace, partial):
@@ -237,6 +244,15 @@ class update_links_thread(QThread):
         self.search = search
         self.replace = replace
         self.partial = partial
+        self.colors = [
+            QColor(0, 0, 0), # black
+            QColor(255, 0, 0), # red
+            QColor(0, 255, 0), # blue
+            QColor(255, 255, 0), # purple
+        ]
+        CoInitialize()
+        self.excel = ExcelDocument(visible=False)
+
 
     def __del__(self):
         self.wait()
@@ -255,16 +271,40 @@ class update_links_thread(QThread):
                 if self._file_filter(root, file):
                     yield [root, file]
 
+    def set_replace_mode(self):
+        if self.partial:
+           return xlPart
+        return xlWhole
+
     def search_and_replace(self):
+        replace_mode = self.set_replace_mode()
+        range = self.excel.get_range("A1:" + self.excel.get_last_row() + self.excel.get_last_column())
+
         if not self.search:
-            return
+            # no search text, bail
+            return False
+
+        if not range.find(self.search, self.excel.get_cell(1, 1), xlValues, replace_mode):
+            # nothing found no need to search or replace
+            return False
+
+        if not self.replace:
+            # this was just a find and we did find someting
+            return True
+
+        # ok lets do the replace
+        range.replace(self.search, self.replace, replace_mode)
+        return True        
+
 
     def run(self):
+        blackColor = QColor(0, 0, 0)
+        redColor = QColor(255, 0, 0)
         self.running = True
         self.file_list = []
         self.update_progressbar.emit(0)
         self.clear_textarea.emit()
-        self.update_textarea.emit("Relinking Files in {}\n".format(self.path))
+        self.update_textarea.emit("Relinking Files in {}\n".format(self.path), blackColor)
         for root, file in self.excel_files(self.path):
             self.file_list.append(os.path.join(root, file))
             self.update_statusbar.emit('Files Found ' + str(len(self.file_list)))
@@ -274,25 +314,26 @@ class update_links_thread(QThread):
         self.update_statusbar.emit('Scanning Completed ' + str(len(self.file_list)) + ' Files Found')
         total_files = len(self.file_list)
         current_count = 0
-        CoInitialize()
-        excel = ExcelDocument(visible=False)
         self.update_statusbar.emit('Starting Excel')
         for file in self.file_list:
             current_count += 1
             self.update_progressbar.emit(int(float(current_count) / total_files * 100))
             self.update_statusbar.emit('Relinking %d of %d' % (current_count, total_files))
             # Set text color
-            self.update_textarea.emit(file[len(self.path) + 1:])
-            excel.display_alerts(False)
-            excel.open(file, updatelinks=3)
-            self.search_and_replace()
+            self.excel.display_alerts(False)
+            self.excel.open(file, updatelinks=3)
+            if self.search_and_replace():
+                color = redColor
+            else:
+                color = blackColor
+            self.update_textarea.emit(file[len(self.path) + 1:], color)
             sleep(2) # give it some time to work it's magic
-            excel.save()
-            excel.close()
+            self.excel.save()
+            self.excel.close()
             if not self.running:
                 break
 
-        excel.quit()
+        self.excel.quit()
         CoUninitialize()
         if current_count == total_files:
             self.update_statusbar.emit('Completed')
