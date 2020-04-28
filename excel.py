@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# Reference for find https://excelmacromastery.com/excel-vba-find/
 
 from win32com.client import constants, Dispatch, DispatchEx, gencache
 import pythoncom
@@ -22,7 +23,9 @@ xlformatfromleftorabove = 0  # row insert from above / column inserst from left
 xlformatfromrightorbelow = 1 # row insert from below / column inserst from right
 xlWhole = 1
 xlPart = 2
-xlFormulas =  -4123
+xlComments = -4144
+xlCommentsThreaded = -4184
+xlFormulas = -4123
 xlValues = -4163
 xlByRows = 1
 xlByColumns = 2
@@ -201,6 +204,21 @@ class ExcelDocument(object):
     Return count of string found in range
     """
     return self.app.WorksheetFunction.CountIf(range, text)
+
+  def find_cells(self, range, text, lookin=xlValues, lookat=xlWhole):
+    """
+    Returns a list of range objects (single cells) that matches text
+    """
+    results = []
+    first_result = range.Find(text, LookIn=lookin, LookAt=lookat)
+    if first_result:
+      results.append(first_result)
+      next_result = range.FindNext(first_result)
+      while next_result.Address != first_result.Address:
+        results.append(next_result)
+        next_result = range.FindNext(next_result)
+    return results
+
 
   def save(self):
     """

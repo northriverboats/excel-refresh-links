@@ -5,7 +5,7 @@ from PyQt4 import QtCore
 from PyQt4.QtCore import QSettings, QSize, QPoint # pylint: disable-msg=E0611
 from PyQt4.QtCore import QThread, SIGNAL # pylint: disable-msg=E0611
 from PyQt4.QtGui import QColor # pylint: disable-msg=E0611
-from excel import ExcelDocument, xlPart, xlWhole, xlValues
+from excel import ExcelDocument, xlPart, xlWhole, xlValues, xlFormulas, xlComments
 from pathlib import Path
 from time import sleep
 from win32com.client import DispatchEx
@@ -247,12 +247,10 @@ class update_links_thread(QThread):
         self.colors = [
             QColor(0, 0, 0), # black
             QColor(255, 0, 0), # red
-            QColor(0, 255, 0), # blue
-            QColor(255, 255, 0), # purple
+            QColor(0, 0, 255), # blue
+            QColor(255, 0, 255), # purple
         ]
-        CoInitialize()
-        self.excel = ExcelDocument(visible=False)
-
+        self.excel = None
 
     def __del__(self):
         self.wait()
@@ -276,35 +274,48 @@ class update_links_thread(QThread):
            return xlPart
         return xlWhole
 
-    def search_and_replace(self):
+    def do_replace(self):
         replace_mode = self.set_replace_mode()
-        range = self.excel.get_range("A1:" + self.excel.get_last_row() + self.excel.get_last_column())
+        start = self.excel.get_cell(1, 1)
+        end = self.excel.get_cell(self.excel.get_last_row(), self.excel.get_last_column())
+        range = self.excel.get_range(start, end)
 
         if not self.search:
             # no search text, bail
-            return False
-
-        if not range.find(self.search, self.excel.get_cell(1, 1), xlValues, replace_mode):
-            # nothing found no need to search or replace
-            return False
+            return 0
 
         if not self.replace:
             # this was just a find and we did find someting
-            return True
+            return 1
 
         # ok lets do the replace
         range.replace(self.search, self.replace, replace_mode)
-        return True        
+        return 1
+
+
+    def do_search(self, search_type):
+        replace_mode = self.set_replace_mode()
+        start = self.excel.get_cell(1, 1)
+        end = self.excel.get_cell(self.excel.get_last_row(), self.excel.get_last_column())
+        range = self.excel.get_range(start, end)
+
+        if not self.search:
+            # no search text, bail
+            return 0
+
+        if not range.find(self.search, self.excel.get_cell(1, 1), search_type, replace_mode):
+            # nothing found no need to search or replace
+            return 0
+        return 1
+
 
 
     def run(self):
-        blackColor = QColor(0, 0, 0)
-        redColor = QColor(255, 0, 0)
         self.running = True
         self.file_list = []
         self.update_progressbar.emit(0)
         self.clear_textarea.emit()
-        self.update_textarea.emit("Relinking Files in {}\n".format(self.path), blackColor)
+        self.update_textarea.emit("Relinking Files in {}\n".format(self.path), self.colors[0])
         for root, file in self.excel_files(self.path):
             self.file_list.append(os.path.join(root, file))
             self.update_statusbar.emit('Files Found ' + str(len(self.file_list)))
@@ -313,20 +324,22 @@ class update_links_thread(QThread):
                 return
         self.update_statusbar.emit('Scanning Completed ' + str(len(self.file_list)) + ' Files Found')
         total_files = len(self.file_list)
-        current_count = 0
+        current_count = 0        
+        CoInitialize()
+        self.excel = ExcelDocument(visible=False)
         self.update_statusbar.emit('Starting Excel')
         for file in self.file_list:
             current_count += 1
             self.update_progressbar.emit(int(float(current_count) / total_files * 100))
             self.update_statusbar.emit('Relinking %d of %d' % (current_count, total_files))
-            # Set text color
             self.excel.display_alerts(False)
             self.excel.open(file, updatelinks=3)
-            if self.search_and_replace():
-                color = redColor
-            else:
-                color = blackColor
-            self.update_textarea.emit(file[len(self.path) + 1:], color)
+            color = 0
+            color += (self.do_search(xlValues) * 1)
+            color += (self.do_search(xlFormulas) * 2)
+            if color > 0:
+                self.do_replace()
+            self.update_textarea.emit(file[len(self.path) + 1:], self.colors[color])
             sleep(2) # give it some time to work it's magic
             self.excel.save()
             self.excel.close()
